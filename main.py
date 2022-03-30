@@ -1,11 +1,14 @@
+import os.path
 import creopyson
-
 from tkinter import *
 from tkinter import filedialog
 
 
 class MainWindow:
     def __init__(self, win):
+        super().__init__()
+        win.columnconfigure(0, weight=1)
+        win.columnconfigure(1, weight=3)
         self.c = creopyson.Client()
         self.c.connect()
         self.c.creo_set_creo_version(7)
@@ -13,6 +16,8 @@ class MainWindow:
         self.currentWorkFolderPathInputField = Entry()
         self.currentWorkFolderPathInputField.insert(0, self.c.creo_pwd())
         self.currentWorkFolderPathButton = Button(win, text="Wybierz")
+        self.currentFileLabel = Label(win, text="Wybierz plik")
+        self.currentFileButton = Button(win, text="Wybierz plik")
         self.boxHeightLabel = Label(win, text="Wysokość pudełka")
         self.boxHeightInputField = Entry()
         self.boxLengthLabel = Label(win, text="Długość pudełka")
@@ -29,6 +34,8 @@ class MainWindow:
         self.currentWorkFolderPathLabel.pack()
         self.currentWorkFolderPathInputField.pack(fill="both")
         self.currentWorkFolderPathButton.pack()
+        self.currentFileLabel.pack()
+        self.currentFileButton.pack()
         self.boxHeightLabel.pack()
         self.boxHeightInputField.pack(fill="both")
         self.boxLengthLabel.pack()
@@ -42,16 +49,24 @@ class MainWindow:
         self.textDepthLabel.pack()
         self.textDepthInputField.pack(fill="both")
         self.submitButton.pack()
-        self.submitButton.bind("<Button-1>", self.save_values)
         self.currentWorkFolderPathButton.bind("<Button-1>", self.choose_working_dir)
+        self.currentFileButton.bind("<Button-1>", self.choose_file)
+        self.submitButton.bind("<Button-1>", self.save_values)
 
     def choose_working_dir(self, event):
         path = filedialog.askdirectory(title='Wybierz katalog roboczy')
         self.currentWorkFolderPathInputField.delete(0, END)
         self.currentWorkFolderPathInputField.insert(0, path)
+        self.c.creo_cd(path)
+
+    def choose_file(self, event):
+        filePath = filedialog.askopenfile(title="Wybierz plik", filetypes=[("Part name", "*.prt")])
+        fileName = os.path.basename(filePath.name)
+        print(fileName)
+        self.c.file_open(fileName)
 
     def save_values(self, event):
-        # ! Error Handling
+        # TODO Error Handling
         boxLength = float(self.boxLengthInputField.get())
         boxHeight = float(self.boxHeightInputField.get())
         boxDepth = float(self.boxDepthInputField.get())
@@ -82,33 +97,6 @@ class MainWindow:
 window = Tk()
 mainwin = MainWindow(window)
 window.title('Kamil Madej Projekt 1')
-window.geometry("500x400")
+window.geometry("800x600")
 window.mainloop()
-
-"""
-def input_validator(input):
-    try:
-        float(input)
-    except:
-        raise ValueError
-    return input
-
-
-
-c = creopyson.Client()
-
-c.connect()
-
-c.creo_set_creo_version(7)
-
-print(c.is_creo_running())
-
-print(c.creo_pwd())
-
-try:
-    boxLength = input_validator(input("Podaj długość kostki: "))
-except ValueError:
-    print("Value out of reach")
-    # print("Wpisz poprawną wartość parametru!")
-
-"""
+print("KONIEC")
