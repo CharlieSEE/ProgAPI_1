@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import os.path
 
 import creopyson
@@ -7,7 +8,24 @@ from tkinter import messagebox
 
 
 class MainWindow:
+    def __init__(self, win):
+        win.title('Kamil Madej Projekt 1')
+        win.geometry("800x600")
+
+        self.c = creopyson.Client()
+        self.c.connect()
+        self.c.creo_set_creo_version(7)
+
+        self.create_widgets(win)
+        self.get_current_values()
+        win.mainloop()
+
     def validate_input(self, inp):
+        """
+        Sprawdzanie czy wejście jest liczbą
+        :param inp:
+        :return:
+        """
         try:
             if inp == "":
                 return True
@@ -16,19 +34,14 @@ class MainWindow:
         except:
             return False
 
-    def __init__(self, win):
-        self.c = creopyson.Client()
-        self.c.connect()
-        self.c.creo_set_creo_version(7)
-        win.title('Kamil Madej Projekt 1')
-        win.geometry("800x600")
-        self.create_widgets(win)
-        self.get_current_values()
-        win.mainloop()
-
     def create_widgets(self, win):
+        """
+        Stwórz rozkład przycisków wejść i etykiet
+        :param win:
+        :return:
+        """
 
-        # Labels
+        # Etykiety
         self.titleLabel = Label(win, text="Programowanie API", font=("Arial", 25))
         self.currentWorkFolderPathLabel = Label(win, text="Katalog Roboczy", font=("Arial", 11))
         self.materialChooseLabel = Label(win, text="Materiał z grupy Ferrous_metals", font=("Arial", 11))
@@ -40,7 +53,7 @@ class MainWindow:
         self.textDepthLabel = Label(win, text="Głębokość tekstu", font=("Arial", 11))
         self.textValueLabel = Label(win, text="Napis", font=("Arial", 11))
 
-        # Inputs
+        # Wejścia
         self.currentWorkFolderPathInputField = Entry()
         self.boxHeightInputField = Entry()
         self.boxLengthInputField = Entry()
@@ -50,12 +63,12 @@ class MainWindow:
         self.textDepthInputField = Entry()
         self.textValueInputField = Entry()
 
-        # Buttons
+        # Przyciski
         self.currentWorkFolderPathButton = Button(win, text="Zmień katalog")
         self.currentFileButton = Button(win, text="Wybierz plik")
         self.submitButton = Button(win, text="Zapisz wymiary")
 
-        # Dropdown menu
+        # Menu wybieralne
         materialsList = ["Steel_cast", "Stainless_steel_ferritic", "Steel_HSLA", "Tool_steel_high_speed",
                          "Steel_low_carbon", "Steel_medium_carbon", "Steel_high_carbon", "Cast_iron_ductile",
                          "Stainless_steel_austenitic", "Steel_galvanized"]
@@ -63,7 +76,7 @@ class MainWindow:
         self.optionVar.set(materialsList[0])
         self.materialChooseMenu = OptionMenu(win, self.optionVar, *materialsList)
 
-        # Input validation
+        # Walidacja wejść
         req = win.register(self.validate_input)
         self.boxHeightInputField.config(validate="key", validatecommand=(req, "%P"))
         self.boxLengthInputField.config(validate="key", validatecommand=(req, "%P"))
@@ -72,7 +85,7 @@ class MainWindow:
         self.textDistFromBoxEdgeInputField.config(validate="key", validatecommand=(req, "%P"))
         self.textDepthInputField.config(validate="key", validatecommand=(req, "%P"))
 
-        # Layout
+        # Układ elementów
         btnInternalPaddingX = 10
         btnInternalPaddingY = 5
         btnOuterPaddingY = 10
@@ -107,13 +120,23 @@ class MainWindow:
         win.bind("<Return>", self.save_values)
 
     def choose_working_dir(self, event):
+        """
+        Wybieranie katalogu roboczego
+        :param event:
+        :return:
+        """
         path = filedialog.askdirectory(title='Wybierz katalog roboczy')
         self.currentWorkFolderPathInputField.delete(0, END)
         self.currentWorkFolderPathInputField.insert(0, path)
         self.c.creo_cd(path)
 
     def choose_file(self, event):
-        filePathObj = filedialog.askopenfile(title="Wybierz plik", filetypes=[("Part name", "*.prt")])
+        """
+        Wybieranie pliku
+        :param event:
+        :return:
+        """
+        filePathObj = filedialog.askopenfile(title="Wybierz plik", filetypes=[("Part", "*.prt")])
         filePath = os.path.split(filePathObj.name)[0]
         fileName = os.path.split(filePathObj.name)[1]
         self.currentWorkFolderPathInputField.delete(0, END)
@@ -123,8 +146,14 @@ class MainWindow:
         self.get_current_values()
 
     def save_values(self, event):
+        """
+        Zapisz wartości parametrów i zregeneruj model
+        :param event:
+        :return:
+        """
 
-        creoMatPath = "C:/Program Files/PTC/Creo 7.0.1.0/Common Files/text/materials-library/Standard-Materials_GrantaDesign"
+        # Ścieżka do materiału
+        creoMatPath = "D:/Creo/Creo 7.0.1.0/Common Files/text/materials-library/Standard-Materials_Granta-Design/Ferrous_metals"
 
         try:
             material = self.optionVar.get()
@@ -162,7 +191,15 @@ class MainWindow:
 
         self.get_current_values()
 
+        self.c.file_save()
+
+        messagebox.showinfo("Zapisano", "Poprawnie zapisano")
+
     def get_current_values(self):
+        """
+        Pobierz aktualne wartości parametrów dla modelu
+        :return:
+        """
 
         self.currentWorkFolderPathInputField.delete(0, END)
         self.currentWorkFolderPathInputField.insert(0, self.c.creo_pwd())
@@ -192,4 +229,9 @@ class MainWindow:
                 self.textValueInputField.insert(0, param.get("value"))
 
 
-MainWindow(Tk())
+try:
+    MainWindow(Tk())
+except ConnectionError:
+    messagebox.showerror("Błąd", "Creopyson nie jest włączony")
+except RuntimeError:
+    messagebox.showerror("Błąd", "Creo parametric nie jest włączone")
